@@ -1,46 +1,26 @@
-# Import pass git repos into KeepassXC
-
-Tired of using pass? Want to switch to the nice GUI and wider ecosystem of KeePassXC?
-
-Turn a pass (https://www.passwordstore.org/) repository into an XML file to import into KeePassXC. XML is dumped into stdout.
-
 ## Usage
 
 ```bash
-$ python3 pass-to-keepassxc.py <password store directory>
+# move all parentless passwords to the other/ sub-directory
+cd ~/.password-store/ ; mkdir other ; ls *.gpg | sed -e 's/\.gpg//' | xargs -I{} pass mv {} other/{}
+
+# perform conversion
+./pass-to-keepassxc.py ~/.password-store/ > import-keepassxc.xml
+openssl rand -out keyfile.keyx 256
+keepassxc-cli import --set-key-file keyfile.keyx import-keepassxc.xml keepass-keystore.kbdx
+
+# list entries to double-check that all have been converted
+keepassxc-cli ls -R --no-password -k keyfile.keyx keepass-keystore.kbdx
+
+# display multiline password entries for manual adjustment
+cat entries-multiline.txt
 ```
 
-## Example
+## Versions tested
 
-Typically, pass's password store directory is `~/.password-store`.
-
-```bash
-$ python3 pass-to-keepassxc.py ~/.password-store > deleteme.xml
-$ keepassxc-cli import deleteme.xml MyKeepassXCPasswords.kbdx
-$ rm deleteme.xml
-```
-
-Then go and configure additional settings in the KeePassXC GUI or CLI.
-
-## Assumptions
-
-- The subdirectories of `<password-store-directory>` are equivalent to "groups" in KeePassXC.
-- Each leaf file (e.g., .gpg files) is a GPG-encrypted file with the first line being the password.
-- The name of the directory above a leaf file is a URL of a site.
-- Additional lines after the first line should be stored in the "Notes" field in KeePassXC.
-
-This assumes a directory structure like this:
-
-```
-...
-├── financial
-│   ├── bank.example.com
-│   │   └── dumbusername99
-│   └── ...
-└── browser
-    ├── webmail.example.com
-    │   └── alice@example.com.gpg
-...
-```
-
-You may have to either edit this script or manually fix the entries in KeepassXC afterward if you are doing something different.
+- KeePassXC 2.7.4
+- Python 3.11.2
+- lxml 5.2.1
+- pass 1.7.4
+- GnuPG 2.2.40
+- Debian 12
